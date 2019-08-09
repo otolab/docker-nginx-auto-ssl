@@ -46,15 +46,20 @@ services:
     ports:
       - 80:80
       - 443:443
-    volumes:
-      - ssl_data:/etc/resty-auto-ssl
     environment:
       ALLOWED_DOMAINS: 'yourdomain.com'
       SITES: 'yourdomain.com=myapp:80'
+      REDIS_HOST: 'redis'
+      REDIS_PORT: 6379
   
   # your application, listening on port specified in `SITES` env variable
   myapp:
     image: nginx
+
+  redis:
+    image: redis
+    volumes:
+      - ssl_data:/data
 
 volumes:
   ssl_data:

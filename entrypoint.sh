@@ -59,7 +59,7 @@ fi
 
 
 # let's substitute $ALLOWED_DOMAINS and $LETSENCRYPT_URL into OpenResty configuration
-envsubst '$ALLOWED_DOMAINS,$LETSENCRYPT_URL' \
+envsubst '$ALLOWED_DOMAINS,$LETSENCRYPT_URL,$REDIS_HOST,$REDIS_PORT' \
   < ${RESTY_CONF_DIR}/resty-http.conf \
   > ${RESTY_CONF_DIR}/resty-http.conf.copy \
   && mv ${RESTY_CONF_DIR}/resty-http.conf.copy ${RESTY_CONF_DIR}/resty-http.conf
