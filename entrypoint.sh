@@ -57,6 +57,7 @@ if [ "$FORCE_HTTPS" == "true" ]; then
   fi
 fi
 
+REDIS_HOST=$(nslookup $REDIS_HOST | grep "Address" | grep -v "#53" | cut -d" " -f3)
 
 # let's substitute $ALLOWED_DOMAINS and $LETSENCRYPT_URL into OpenResty configuration
 envsubst '$ALLOWED_DOMAINS,$LETSENCRYPT_URL,$REDIS_HOST,$REDIS_PORT' \
