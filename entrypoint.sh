@@ -26,6 +26,17 @@ fi
 # 1. /etc/nginx/conf.d/db.example.com.conf using $SERVER_ENDPOINT=localhost:5432 and $SERVER_NAME=db.example.com
 # 2. /etc/nginx/conf.d/app.example.com.conf using $SERVER_ENDPOINT=localhost:8080 and $SERVER_NAME=app.example.com
 
+if [ "$FORCE_HTTPS" == "true" ]; then
+  # only do this, if it's first run
+  if ! grep -q "force-https.conf" ${RESTY_CONF_DIR}/resty-server-http.conf
+  then
+    echo "include force-https.conf;" >> ${RESTY_CONF_DIR}/resty-server-http.conf
+  fi
+  SERVER_CONF_BASE=${RESTY_CONF_DIR}/server-proxy-force-https.conf
+else
+  SERVER_CONF_BASE=${RESTY_CONF_DIR}/server-proxy.conf
+fi
+
 if [ -n "$SITES" ]; then
   # lets read all backends, separated by ';'
   IFS=\; read -a SITES_SEPARATED <<<"$SITES"
@@ -36,25 +47,15 @@ if [ -n "$SITES" ]; then
     export SERVER_NAME=${NAME_EQ_ENDPOINT%=*}
     export SERVER_ENDPOINT=${RAW_SERVER_ENDPOINT#*//}  # it clears url scheme, like http:// or https://
     envsubst '$SERVER_NAME $SERVER_ENDPOINT' \
-    < ${RESTY_CONF_DIR}/server-proxy.conf \
+    < ${SERVER_CONF_BASE} \
     > ${NGINX_CONF_DIR}/${SERVER_NAME}.conf
   done
   unset SERVER_NAME SERVER_ENDPOINT
-
 
 # if $SITES isn't defined, let's check if $NGINX_CONF_DIR is empty
 elif [ ! "$(ls -A ${NGINX_CONF_DIR})" ]; then
   # if yes, just copy default server (similar to default from docker-openresty, but using https)
   cp ${RESTY_CONF_DIR}/server-default.conf ${NGINX_CONF_DIR}/default.conf
-fi
-
-
-if [ "$FORCE_HTTPS" == "true" ]; then
-  # only do this, if it's first run
-  if ! grep -q "force-https.conf" ${RESTY_CONF_DIR}/resty-server-http.conf
-  then
-    echo "include force-https.conf;" >> ${RESTY_CONF_DIR}/resty-server-http.conf
-  fi
 fi
 
 export REDIS_HOST_ADDR=$(nslookup $REDIS_HOST | grep "Address" | grep -v "#53" | cut -d" " -f3)
