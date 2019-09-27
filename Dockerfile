@@ -16,6 +16,8 @@ RUN apk --no-cache add bash openssl \
     # let's remove default open resty configuration, we'll conditionally add modified version in entrypoint.sh
     && rm /etc/nginx/conf.d/default.conf
 
+RUN cat /usr/local/openresty/luajit/bin/resty-auto-ssl/dehydrated | sed "s/grep Location/grep -i Location/g" | sed "s/grep Replay/grep -i Replay/g" > /usr/local/openresty/luajit/bin/resty-auto-ssl/dehydrated
+
 COPY nginx.conf snippets /usr/local/openresty/nginx/conf/
 COPY entrypoint.sh /entrypoint.sh
 
