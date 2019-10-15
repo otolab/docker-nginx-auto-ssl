@@ -58,12 +58,24 @@ elif [ ! "$(ls -A ${NGINX_CONF_DIR})" ]; then
   cp ${RESTY_CONF_DIR}/server-default.conf ${NGINX_CONF_DIR}/default.conf
 fi
 
-export REDIS_HOST_ADDR=$(nslookup $REDIS_HOST | grep "Address" | grep -v "#53" | cut -d" " -f3)
-
 # let's substitute $ALLOWED_DOMAINS and $LETSENCRYPT_URL into OpenResty configuration
-envsubst '$ALLOWED_DOMAINS,$LETSENCRYPT_URL,$REDIS_HOST_ADDR,$REDIS_PORT' \
-  < ${RESTY_CONF_DIR}/resty-http.conf \
-  > ${RESTY_CONF_DIR}/resty-http.conf.copy \
-  && mv ${RESTY_CONF_DIR}/resty-http.conf.copy ${RESTY_CONF_DIR}/resty-http.conf
+if [ "$REDIS_PASSWORD" != "" ]; then
+  export REDIS_HOST_ADDR=$(nslookup $REDIS_HOST | grep "Address" | grep -v "#53" | cut -d" " -f3)
+  envsubst '$ALLOWED_DOMAINS,$LETSENCRYPT_URL,$REDIS_HOST_ADDR,$REDIS_PORT,$REDIS_DB,$REDIS_PASSWORD' \
+    < ${RESTY_CONF_DIR}/resty-http.redis-auth.conf \
+    > ${RESTY_CONF_DIR}/resty-http.conf.copy \
+    && mv ${RESTY_CONF_DIR}/resty-http.conf.copy ${RESTY_CONF_DIR}/resty-http.conf
+elif [ "$REDIS_HOST" != "" ]; then
+  export REDIS_HOST_ADDR=$(nslookup $REDIS_HOST | grep "Address" | grep -v "#53" | cut -d" " -f3)
+  envsubst '$ALLOWED_DOMAINS,$LETSENCRYPT_URL,$REDIS_HOST_ADDR,$REDIS_PORT' \
+    < ${RESTY_CONF_DIR}/resty-http.redis.conf \
+    > ${RESTY_CONF_DIR}/resty-http.conf.copy \
+    && mv ${RESTY_CONF_DIR}/resty-http.conf.copy ${RESTY_CONF_DIR}/resty-http.conf
+else
+  envsubst '$ALLOWED_DOMAINS,$LETSENCRYPT_URL' \
+    < ${RESTY_CONF_DIR}/resty-http.redis.conf \
+    > ${RESTY_CONF_DIR}/resty-http.conf.copy \
+    && mv ${RESTY_CONF_DIR}/resty-http.conf.copy ${RESTY_CONF_DIR}/resty-http.conf
+fi
 
 exec "$@"
